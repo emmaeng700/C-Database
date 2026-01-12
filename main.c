@@ -34,3 +34,49 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #endif
+
+//wrote my own custom getline
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+    if (lineptr == NULL || n == NULL || stream == NULL) {
+        return -1;
+    }
+
+    char *buffer = *lineptr;
+    size_t size = *n;
+    int c;
+    size_t i = 0;
+
+    if (buffer == NULL || size == 0) {
+        size = 128;  // Initial buffer size
+        buffer = malloc(size);
+        if (buffer == NULL) {
+            return -1;
+        }
+    }
+
+    while ((c = fgetc(stream)) != EOF) {
+        if (i >= size - 1) {
+            size *= 2;  // Double the buffer size
+            char *new_buffer = realloc(buffer, size);
+            if (new_buffer == NULL) {
+                free(buffer);
+                return -1;
+            }
+            buffer = new_buffer;
+        }
+        buffer[i++] = (char)c;
+        if (c == '\n') {
+            break;
+        }
+    }
+
+    if (i == 0 && c == EOF) {
+        return -1;  // End of file and no data
+    }
+
+    buffer[i] = '\0';
+    *lineptr = buffer;
+    *n = size;
+
+    return i;
+}
